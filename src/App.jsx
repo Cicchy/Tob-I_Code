@@ -52,6 +52,7 @@ import { BlocklyWorkspace } from "@/components/sketches/BlocklyWorkspace"
 import { RobotPreview } from "@/components/sketches/RobotPreview"
 import { SerialMonitor } from "@/components/sketches/SerialMonitor"
 import { generateCode } from "@/lib/codeGenerator"
+import { parseCommands } from "@/lib/parseCommands"
 
 const isElectron = typeof window !== "undefined" && window.electronAPI?.isElectron
 
@@ -60,6 +61,7 @@ export default function App() {
   const [code, setCode] = useState("")
   const [running, setRunning] = useState(false)
   const [sketchName, setSketchName] = useState("sin-titulo")
+  const [commands, setCommands] = useState([])
   const [device, setDevice] = useState("")
   const [isPairingOpen, setIsPairingOpen] = useState(false)
   const [isScanning, setIsScanning] = useState(false)
@@ -298,7 +300,16 @@ export default function App() {
           <Button
             size="sm"
             variant={running ? "destructive" : "default"}
-            onClick={() => setRunning(!running)}
+            onClick={() => {
+              if (running) {
+                setRunning(false)
+                setCommands([])
+              } else {
+                const cmds = parseCommands(wsRef.current?.workspace)
+                setCommands(cmds)
+                setRunning(true)
+              }
+            }}
           >
             {running ? <Square className="size-3.5" /> : <Play className="size-3.5" />}
             {running ? "Detener" : "Ejecutar"}
@@ -428,7 +439,11 @@ export default function App() {
         <ResizablePanel id="right">
           <Resizable orientation="vertical" defaultSize={[60, 40]} panels={[{ id: "preview" }, { id: "serial" }]}>
             <ResizablePanel id="preview">
-              <RobotPreview running={running} />
+              <RobotPreview
+                running={running}
+                commands={commands}
+                onSimulationComplete={() => setRunning(false)}
+              />
             </ResizablePanel>
             <ResizableResizeTrigger id="left-right" withHandle />
             <ResizablePanel id="serial" minSize={15}>
