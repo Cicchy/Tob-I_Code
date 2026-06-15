@@ -9,6 +9,7 @@ const BODY_DEPTH = 1.2
 const LEG_LENGTH = 0.8
 const LEG_WIDTH = 0.2
 const HEAD_SIZE = 0.5
+const MODEL_SCALE = 12
 
 function Leg({ side, index, legAnglesRef }) {
   const ref = useRef()
@@ -44,7 +45,7 @@ export function TobiModel({ commands, running, onComplete }) {
   const cmdTimeRef = useRef(0)
 
   const legAnglesRef = useRef([0, 0, 0, 0])
-  const rotYRef = useRef(0)
+  const headingRef = useRef(0)
   const posZRef = useRef(0)
   const danceTimeRef = useRef(0)
   const modelPosRef = useRef(new THREE.Vector3(0, -1.5, 0))
@@ -149,6 +150,7 @@ export function TobiModel({ commands, running, onComplete }) {
 
     modelPosRef.current.set(0, -1.5, 0)
     gltf.scene.position.y += modelPosRef.current.y
+    gltf.scene.scale.setScalar(MODEL_SCALE)
 
     console.log("Model centered, size:", size)
   }, [gltf])
@@ -196,7 +198,7 @@ export function TobiModel({ commands, running, onComplete }) {
         const phase = t * Math.PI * cmd.steps * 2
         const dir = cmd.type === "walk_backward" ? -1 : 1
         const forward = new THREE.Vector3(dir, 0, 0)
-        forward.applyAxisAngle(new THREE.Vector3(0, 1, 0), rotYRef.current)
+        forward.applyAxisAngle(new THREE.Vector3(0, 0, 1), headingRef.current)
 
         legAnglesRef.current = [0, 1, 2, 3].map((i) => Math.sin(phase + i * Math.PI * 0.5) * 0.3)
         legRotationsRef.current = [0, 1, 2, 3].map((i) => Math.sin(phase + i * Math.PI * 0.5) * 0.4)
@@ -256,8 +258,8 @@ export function TobiModel({ commands, running, onComplete }) {
       }
       case "rotate": {
         const targetAngle = THREE.MathUtils.degToRad(cmd.angle)
-        rotYRef.current += targetAngle * dt / cmd.duration
-        if (gltf?.scene) gltf.scene.rotation.y = rotYRef.current
+        headingRef.current += targetAngle * dt / cmd.duration
+        if (gltf?.scene) gltf.scene.rotation.z = headingRef.current
         if (headRef.current) headRef.current.rotation.y = Math.sin(t * Math.PI * 2) * 0.1
         break
       }
@@ -295,7 +297,7 @@ export function TobiModel({ commands, running, onComplete }) {
         if (gltf?.scene) {
           gltf.scene.position.y = modelPosRef.current.y + Math.abs(Math.sin(dt2 * 5)) * 0.15
           gltf.scene.rotation.y += dt * 2
-          rotYRef.current = gltf.scene.rotation.y
+          headingRef.current = gltf.scene.rotation.z
         }
         break
       }

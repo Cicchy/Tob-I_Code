@@ -105,6 +105,16 @@ export const tobiBlocks = {
       this.setTooltip("Hace que el robot mueva la cola")
     },
   },
+  tobi_when_start: {
+    init() {
+      this.appendDummyInput()
+        .appendField("al ejecutar")
+      this.setNextStatement(true, null)
+      this.setStyle("event_blocks")
+      this.setColour("#f5a623")
+      this.setTooltip("Inicia la ejecución del programa")
+    },
+  },
   tobi_sit: {
     init() {
       this.appendDummyInput().appendField("sentarse")
@@ -204,6 +214,15 @@ export const tobiBlocks = {
 export const tobiToolbox = {
   kind: "categoryToolbox",
   contents: [
+    {
+      kind: "category",
+      name: "Eventos",
+      categorystyle: "event_category",
+      colour: "#f5a623",
+      contents: [
+        { kind: "block", type: "tobi_when_start" },
+      ],
+    },
     {
       kind: "category",
       name: "Movimiento",

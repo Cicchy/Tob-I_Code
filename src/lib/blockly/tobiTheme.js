@@ -31,6 +31,11 @@ const blockStyles = {
     colourSecondary: "#9156c4",
     colourTertiary: "#7c49ae",
   },
+  event_blocks: {
+    colourPrimary: "#f5a623",
+    colourSecondary: "#d48e1f",
+    colourTertiary: "#b4751c",
+  },
   math_blocks: {
     colourPrimary: "#4a9bd9",
     colourSecondary: "#3d86b8",
@@ -42,6 +47,7 @@ const categoryStyles = {
   motion_category: { colour: "#4a90d9" },
   control_category: { colour: "#50b86c" },
   logic_category: { colour: "#d9a84a" },
+  event_category: { colour: "#f5a623" },
   loop_category: { colour: "#a864d9" },
   math_category: { colour: "#4a9bd9" },
 }
@@ -76,4 +82,4 @@ export const tobiTheme = new Blockly.Theme(
   componentStyles,
 )
 tobiTheme.setFontStyle(fontStyle)
-tobiTheme.setStartHats(false)
+tobiTheme.setStartHats(true)

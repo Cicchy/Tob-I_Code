@@ -2,17 +2,30 @@ export function parseCommands(workspace) {
   if (!workspace) return []
 
   const topBlocks = workspace.getTopBlocks(true)
+  const startBlocks = topBlocks.filter((block) => block.type === "tobi_when_start")
   const commands = []
 
-  for (const block of topBlocks) {
-    parseBlock(block, commands)
+  if (startBlocks.length) {
+    for (const block of startBlocks) {
+      parseBlock(block, commands)
+    }
+  } else {
+    for (const block of topBlocks) {
+      parseBlock(block, commands)
+    }
   }
 
   return commands
 }
 
 function parseBlock(block, commands) {
+  if (!block) return
+
   switch (block.type) {
+    case "tobi_when_start": {
+      parseBlock(block.getNextBlock(), commands)
+      break
+    }
     case "tobi_walk": {
       const steps = block.getFieldValue("STEPS")
       commands.push({ type: "walk", steps: Number(steps), duration: steps * 0.3 })
@@ -124,4 +137,6 @@ function parseBlock(block, commands) {
       break
     }
   }
+
+  parseBlock(block.getNextBlock(), commands)
 }
