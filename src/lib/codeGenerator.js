@@ -11,9 +11,21 @@ export function generateCode(workspace) {
 
   if (lines.length === 0) return "// No hay bloques en el espacio de trabajo"
 
-  const body = lines
-    .map((l) => `  ${l}`)
-    .join("\n")
+  const varAssignRe = /^([a-zA-Z_]\w*)\s*=/
+  const declared = new Set()
+  const declLines = []
+  const bodyLines = []
+
+  for (const line of lines) {
+    const m = line.match(varAssignRe)
+    if (m && !declared.has(m[1])) {
+      declared.add(m[1])
+      const val = line.slice(line.indexOf("=") + 1).trim().replace(/;$/, "")
+      declLines.push(`  int ${m[1]} = ${val};`)
+    } else {
+      bodyLines.push(`  ${line}`)
+    }
+  }
 
   return [
     "void setup() {",
@@ -21,7 +33,8 @@ export function generateCode(workspace) {
     "}",
     "",
     "void loop() {",
-    body,
+    ...(declLines.length ? [...declLines, ""] : []),
+    ...bodyLines,
     "}",
     "",
   ].join("\n")
