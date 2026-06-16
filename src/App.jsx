@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -53,6 +53,9 @@ import { RobotPreview } from "@/components/sketches/RobotPreview"
 import { SerialMonitor } from "@/components/sketches/SerialMonitor"
 import { generateCode } from "@/lib/codeGenerator"
 import { parseCommands } from "@/lib/parseCommands"
+import * as Blockly from "blockly"
+import { tobiBlocks, tobiToolbox } from "@/lib/blockly/tobiBlocks"
+import { tobiTheme } from "@/lib/blockly/tobiTheme"
 
 const isElectron = typeof window !== "undefined" && window.electronAPI?.isElectron
 
@@ -68,6 +71,7 @@ export default function App() {
   const wsRef = useRef(null)
   const fileHandleRef = useRef(null)
   const lastFilePath = useRef(null)
+  const xmlRef = useRef("")
 
   const handleVerify = useCallback(() => {
     toast({
@@ -102,13 +106,23 @@ export default function App() {
   }, [device])
 
   const handleGenerateCode = useCallback(() => {
-    if (!wsRef.current?.workspace) return
-    const generated = generateCode(wsRef.current.workspace)
-    setCode(generated)
+    if (wsRef.current?.workspace) {
+      const generated = generateCode(wsRef.current.workspace)
+      setCode(generated)
+    } else if (xmlRef.current) {
+      const tempWs = Blockly.inject(document.createElement("div"), {
+        toolbox: tobiToolbox,
+        theme: tobiTheme,
+        renderer: "zelos",
+      })
+      Blockly.Xml.domToWorkspace(Blockly.Xml.textToDom(xmlRef.current), tempWs)
+      setCode(generateCode(tempWs))
+      tempWs.dispose()
+    }
   }, [])
 
   const handleBlocksChange = useCallback((xml) => {
-    // Blockly XML changed - store for later
+    xmlRef.current = xml
   }, [])
 
   function getCurrentCode() {
@@ -208,6 +222,15 @@ export default function App() {
     }
   }, [handleSave])
 
+  // Register tobi blocks globally if not already registered
+  useEffect(() => {
+    Object.entries(tobiBlocks).forEach(([name, block]) => {
+      if (!Blockly.Blocks[name]) {
+        Blockly.Blocks[name] = block
+      }
+    })
+  }, [])
+
   return (
     <div className="flex h-svh flex-col">
       <Toaster />
@@ -305,7 +328,25 @@ export default function App() {
                 setRunning(false)
                 setCommands([])
               } else {
-                const cmds = parseCommands(wsRef.current?.workspace)
+                let cmds = []
+                const workspace = wsRef.current?.workspace
+                if (workspace) {
+                  cmds = parseCommands(workspace)
+                } else if (xmlRef.current) {
+                  // Create a temporary workspace from the XML
+                  const tempWorkspace = Blockly.inject(document.createElement('div'), {
+                    toolbox: tobiToolbox,
+                    theme: tobiTheme,
+                    renderer: "zelos",
+                    grid: { spacing: 20, length: 3, colour: "#333", snap: true },
+                    move: { scrollbars: true, drag: true, wheel: true },
+                    zoom: { controls: true, wheel: true, startScale: 0.9 },
+                    trashcan: true,
+                  })
+                  Blockly.Xml.domToWorkspace(Blockly.Xml.textToDom(xmlRef.current), tempWorkspace)
+                  cmds = parseCommands(tempWorkspace)
+                  tempWorkspace.dispose()
+                }
                 setCommands(cmds)
                 setRunning(true)
               }
@@ -316,7 +357,14 @@ export default function App() {
           </Button>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon-sm">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => {
+                  setRunning(false)
+                  setCommands([])
+                }}
+              >
                 <RotateCcw className="size-3.5" />
               </Button>
             </TooltipTrigger>
@@ -394,6 +442,7 @@ export default function App() {
           <div className="flex h-full flex-col">
             <Tabs
               value={view}
+              unmountOnExit={false}
               onValueChange={(details) => {
                 if (details.value === "code") handleGenerateCode()
                 setView(details.value)
