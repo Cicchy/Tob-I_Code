@@ -11,20 +11,13 @@ const LEG_WIDTH = 0.2
 const HEAD_SIZE = 0.5
 const MODEL_SCALE = 12
 
-function Leg({ side, index, legAnglesRef }) {
-  const ref = useRef()
-
-  useFrame(() => {
-    if (!ref.current) return
-    ref.current.rotation.x = legAnglesRef.current[index]
-  })
-
+function Leg({ side, index }) {
   const xOffset = side === "left" ? -BODY_WIDTH / 2 + 0.15 : BODY_WIDTH / 2 - 0.15
   const zOffset = index === 0 ? BODY_DEPTH / 2 - 0.1 : -BODY_DEPTH / 2 + 0.1
 
   return (
     <group position={[xOffset, -BODY_HEIGHT / 2, zOffset]}>
-      <mesh ref={ref} position={[0, -LEG_LENGTH / 2, 0]}>
+      <mesh position={[0, -LEG_LENGTH / 2, 0]}>
         <boxGeometry args={[LEG_WIDTH, LEG_LENGTH, LEG_WIDTH]} />
         <meshStandardMaterial color="#444" />
       </mesh>
@@ -36,6 +29,8 @@ const LEG_KEYWORDS = ["leg", "pierna", "thigh", "femur", "pata", "arm", "brazo",
 
 let nodeLogDone = false
 
+const ZERO = new THREE.Vector3(0, 0, 0)
+
 export function TobiModel({ commands, running, onComplete }) {
   const groupRef = useRef()
   const bodyRef = useRef()
@@ -44,15 +39,12 @@ export function TobiModel({ commands, running, onComplete }) {
   const cmdIdxRef = useRef(0)
   const cmdTimeRef = useRef(0)
 
-  const legAnglesRef = useRef([0, 0, 0, 0])
-  const headingRef = useRef(0)
-  const posZRef = useRef(0)
   const danceTimeRef = useRef(0)
   const modelPosRef = useRef(new THREE.Vector3(0, -1.5, 0))
-  const legRotationsRef = useRef([0, 0, 0, 0, 0, 0, 0, 0])
+  const headingRef = useRef(0)
   const speedRef = useRef(1)
-  const tailRef = useRef()
-  const jumpTimeRef = useRef(0)
+  const startPosRef = useRef(new THREE.Vector3(0, -1.5, 0))
+  const startHeadingRef = useRef(0)
 
   const gltf = useGLTF("/models/CHOCO.gltf")
   const hasModel = gltf?.scene
@@ -71,42 +63,13 @@ export function TobiModel({ commands, running, onComplete }) {
       nodeLogDone = true
     }
 
-    const parts = { root: gltf.scene, legGroups: [], tailNode: null, skeleton: null }
+    const parts = { root: gltf.scene, skeleton: null }
 
     gltf.scene.traverse((n) => {
       if (n.isSkinnedMesh && n.skeleton) {
         parts.skeleton = n.skeleton
       }
     })
-
-    if (parts.skeleton) {
-      parts.skeleton.bones.forEach((bone) => {
-        const name = bone.name?.toLowerCase() || ""
-        if (LEG_KEYWORDS.some(kw => name.includes(kw))) {
-          parts.legGroups.push(bone)
-        }
-      })
-    }
-
-    if (parts.legGroups.length < 4) {
-      gltf.scene.traverse((n) => {
-        const name = n.name?.toLowerCase() || ""
-        if (LEG_KEYWORDS.some(kw => name.includes(kw))) {
-          if (!parts.legGroups.includes(n)) {
-            parts.legGroups.push(n)
-          }
-        }
-      })
-    }
-
-    if (parts.legGroups.length < 4 && parts.skeleton) {
-      const midY = (Math.min(...parts.skeleton.bones.map(b => b.position.y)) + Math.max(...parts.skeleton.bones.map(b => b.position.y))) / 2
-      parts.skeleton.bones.forEach((bone) => {
-        if (bone.position.y < midY) {
-          parts.legGroups.push(bone)
-        }
-      })
-    }
 
     gltf.scene.traverse((n) => {
       const name = n.name?.toLowerCase() || ""
@@ -115,75 +78,59 @@ export function TobiModel({ commands, running, onComplete }) {
       }
     })
 
-    console.log("Found leg groups:", parts.legGroups.length, "- skeleton:", !!parts.skeleton, "- tail:", !!parts.tailNode)
     return parts
-  }, [gltf])
-
-  const mixerRef = useRef()
-  const actionsRef = useRef({})
-
-  useEffect(() => {
-    if (!gltf?.scene || !gltf?.animations?.length) return
-    const mixer = new THREE.AnimationMixer(gltf.scene)
-    mixerRef.current = mixer
-    gltf.animations.forEach((clip) => {
-      const action = mixer.clipAction(clip)
-      if (action) {
-        action.setLoop(THREE.LoopOnce)
-        action.clampWhenFinished = true
-        actionsRef.current[clip.name.toLowerCase()] = action
-      }
-    })
   }, [gltf])
 
   useEffect(() => {
     if (!gltf?.scene) return
+    gltf.scene.rotation.set(-Math.PI / 2, 0, 0)
+
     const box = new THREE.Box3().setFromObject(gltf.scene)
     const center = box.getCenter(new THREE.Vector3())
     const size = box.getSize(new THREE.Vector3())
 
     gltf.scene.position.sub(center)
     gltf.scene.position.y += size.y / 2
-    gltf.scene.rotation.x = -Math.PI / 2
-    gltf.scene.rotation.z = 0
-    gltf.scene.rotation.y = 0
 
     modelPosRef.current.set(0, -1.5, 0)
     gltf.scene.position.y += modelPosRef.current.y
     gltf.scene.scale.setScalar(MODEL_SCALE)
-
-    console.log("Model centered, size:", size)
   }, [gltf])
+
+  useEffect(() => {
+    if (running) return
+    cmdIdxRef.current = 0
+    cmdTimeRef.current = 0
+    timeRef.current = 0
+    danceTimeRef.current = 0
+    speedRef.current = 1
+    headingRef.current = 0
+    startHeadingRef.current = 0
+    startPosRef.current.copy(modelPosRef.current)
+    if (gltf?.scene) {
+      gltf.scene.position.copy(modelPosRef.current)
+      gltf.scene.rotation.set(-Math.PI / 2, 0, 0)
+    }
+    if (bodyRef.current) {
+      bodyRef.current.position.set(0, -1, 0)
+      bodyRef.current.rotation.set(0, 0, 0)
+    }
+  }, [running])
 
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.05)
 
-    if (mixerRef.current) {
-      mixerRef.current.update(dt)
-    }
-
     if (!gltf?.scene && !bodyRef.current) return
-
-    const idleBob = Math.sin(timeRef.current * 1.2) * 0.05
 
     if (!running || !commands?.length) {
       timeRef.current += dt
-      if (bodyRef.current) bodyRef.current.position.y = -1 + idleBob
-      if (headRef.current) headRef.current.rotation.y = Math.sin(timeRef.current * 0.8) * 0.2
-      legAnglesRef.current = legAnglesRef.current.map((_, i) =>
-        Math.sin(timeRef.current * 0.5 + i * Math.PI) * 0.08
-      )
-      if (gltf?.scene) {
-        gltf.scene.position.y = modelPosRef.current.y + idleBob * 0.5
+      if (!gltf?.scene && bodyRef.current) {
+        bodyRef.current.position.y = -1
       }
       return
     }
 
     if (cmdIdxRef.current >= commands.length) {
-      timeRef.current += dt
-      if (gltf?.scene) {
-        gltf.scene.position.y = modelPosRef.current.y + Math.sin(timeRef.current * 1.2) * 0.02
-      }
       return
     }
 
@@ -195,28 +142,20 @@ export function TobiModel({ commands, running, onComplete }) {
     switch (cmd.type) {
       case "walk":
       case "walk_backward": {
-        const phase = t * Math.PI * cmd.steps * 2
         const dir = cmd.type === "walk_backward" ? -1 : 1
         const forward = new THREE.Vector3(dir, 0, 0)
         forward.applyAxisAngle(new THREE.Vector3(0, 0, 1), headingRef.current)
 
-        legAnglesRef.current = [0, 1, 2, 3].map((i) => Math.sin(phase + i * Math.PI * 0.5) * 0.3)
-        legRotationsRef.current = [0, 1, 2, 3].map((i) => Math.sin(phase + i * Math.PI * 0.5) * 0.4)
+        const totalDist = cmd.steps * 1.2
+        const start = startPosRef.current
 
-        if (modelParts?.legGroups?.length >= 4) {
-          modelParts.legGroups.forEach((group, i) => {
-            const idx = i % 4
-            group.rotation.x = Math.sin(phase + idx * Math.PI * 0.5) * 0.4
-          })
-        }
-
-        if (bodyRef.current) bodyRef.current.position.y = -1 + Math.abs(Math.sin(phase)) * 0.08
         if (gltf?.scene) {
-          const speed = speedRef.current
-          gltf.scene.position.x += forward.x * dt * 1.5 * speed
-          gltf.scene.position.z += forward.z * dt * 1.5 * speed
-          gltf.scene.position.y = modelPosRef.current.y + Math.abs(Math.sin(phase)) * 0.06
-          gltf.scene.rotation.z = Math.sin(phase) * 0.03
+          gltf.scene.position.x = start.x + forward.x * totalDist * ease
+          gltf.scene.position.z = start.z + forward.z * totalDist * ease
+        }
+        if (bodyRef.current) {
+          bodyRef.current.position.x = start.x + forward.x * totalDist * ease
+          bodyRef.current.position.z = start.z + forward.z * totalDist * ease
         }
         break
       }
@@ -228,72 +167,41 @@ export function TobiModel({ commands, running, onComplete }) {
         const jumpPhase = t * Math.PI
         const height = Math.sin(jumpPhase) * 0.4
         if (bodyRef.current) bodyRef.current.position.y = -1 + height
-        if (gltf?.scene) {
-          gltf.scene.position.y = modelPosRef.current.y + height
-        }
-        legAnglesRef.current = [0, 1, 2, 3].map(() => Math.sin(jumpPhase) * 0.2)
-        if (modelParts?.legGroups) {
-          modelParts.legGroups.forEach((group) => { group.rotation.x = Math.sin(jumpPhase) * 0.2 })
-        }
+        if (gltf?.scene) gltf.scene.position.y = modelPosRef.current.y + height
         break
       }
       case "incline": {
         const inclineAngle = THREE.MathUtils.degToRad(cmd.angle) * ease
         if (bodyRef.current) bodyRef.current.rotation.x = inclineAngle
-        if (gltf?.scene) {
-          gltf.scene.rotation.z = inclineAngle * 0.5
-        }
+        if (gltf?.scene) gltf.scene.rotation.z = inclineAngle * 0.5
         break
       }
       case "tail_wag": {
         const wag = Math.sin(timeRef.current * 8) * 0.4
-        if (modelParts?.tailNode) {
-          modelParts.tailNode.rotation.y = wag
-        }
-        if (tailRef.current) {
-          tailRef.current.rotation.y = wag
-        }
+        if (modelParts?.tailNode) modelParts.tailNode.rotation.y = wag
         timeRef.current += dt
         break
       }
       case "rotate": {
         const targetAngle = THREE.MathUtils.degToRad(cmd.angle)
-        headingRef.current += targetAngle * dt / cmd.duration
-        if (gltf?.scene) gltf.scene.rotation.z = headingRef.current
-        if (headRef.current) headRef.current.rotation.y = Math.sin(t * Math.PI * 2) * 0.1
+        const currentAngle = startHeadingRef.current + targetAngle * ease
+        headingRef.current = currentAngle
+        if (gltf?.scene) gltf.scene.rotation.z = currentAngle
         break
       }
       case "sit": {
         if (bodyRef.current) bodyRef.current.position.y = -1 - ease * 0.6
-        legAnglesRef.current = [0, 1, 2, 3].map(() => ease * 0.8)
-        if (modelParts?.legGroups) {
-          modelParts.legGroups.forEach((group) => { group.rotation.x = ease * 0.6 })
-        }
         if (gltf?.scene) gltf.scene.position.y = modelPosRef.current.y - ease * 0.3
         break
       }
       case "stand": {
         if (bodyRef.current) bodyRef.current.position.y = -1 + ease * 0.6
-        legAnglesRef.current = [0, 1, 2, 3].map(() => (1 - ease) * 0.8)
-        if (modelParts?.legGroups) {
-          modelParts.legGroups.forEach((group) => { group.rotation.x = (1 - ease) * 0.6 })
-        }
         if (gltf?.scene) gltf.scene.position.y = modelPosRef.current.y + ease * 0.3
         break
       }
       case "dance": {
         danceTimeRef.current += dt
         const dt2 = danceTimeRef.current
-        if (bodyRef.current) bodyRef.current.position.y = -1 + Math.abs(Math.sin(dt2 * 5)) * 0.25
-        if (headRef.current) headRef.current.rotation.y = Math.sin(dt2 * 4) * 0.5
-        legAnglesRef.current = [0, 1, 2, 3].map((i) => Math.sin(dt2 * 6 + i * Math.PI * 0.5) * 0.4)
-        legRotationsRef.current = [0, 1, 2, 3].map((i) => Math.sin(dt2 * 6 + i * Math.PI * 0.5) * 0.4)
-        if (modelParts?.legGroups) {
-          modelParts.legGroups.forEach((group, i) => {
-            const idx = i % 4
-            group.rotation.x = Math.sin(dt2 * 6 + idx * Math.PI * 0.5) * 0.4
-          })
-        }
         if (gltf?.scene) {
           gltf.scene.position.y = modelPosRef.current.y + Math.abs(Math.sin(dt2 * 5)) * 0.15
           gltf.scene.rotation.y += dt * 2
@@ -301,18 +209,18 @@ export function TobiModel({ commands, running, onComplete }) {
         }
         break
       }
-      case "stop": {
-        legAnglesRef.current = legAnglesRef.current.map((v) => v * (1 - ease))
-        if (modelParts?.legGroups) {
-          modelParts.legGroups.forEach((group) => { group.rotation.x *= (1 - ease) })
-        }
-        break
-      }
+      case "stop":
       case "wait":
         break
     }
 
     if (t >= 1) {
+      if (cmd.type === "walk" || cmd.type === "walk_backward") {
+        startPosRef.current.copy(gltf?.scene?.position || bodyRef.current?.position || ZERO)
+      }
+      if (cmd.type === "rotate") {
+        startHeadingRef.current = headingRef.current
+      }
       if (cmd.type === "dance") danceTimeRef.current = 0
       cmdIdxRef.current++
       cmdTimeRef.current = 0
@@ -353,10 +261,10 @@ export function TobiModel({ commands, running, onComplete }) {
         </mesh>
       </group>
 
-      <Leg side="left" index={0} legAnglesRef={legAnglesRef} />
-      <Leg side="left" index={1} legAnglesRef={legAnglesRef} />
-      <Leg side="right" index={0} legAnglesRef={legAnglesRef} />
-      <Leg side="right" index={1} legAnglesRef={legAnglesRef} />
+      <Leg side="left" index={0} />
+      <Leg side="left" index={1} />
+      <Leg side="right" index={0} />
+      <Leg side="right" index={1} />
     </group>
   )
 }

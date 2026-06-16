@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -106,9 +106,19 @@ export default function App() {
   }, [device])
 
   const handleGenerateCode = useCallback(() => {
-    if (!wsRef.current?.workspace) return
-    const generated = generateCode(wsRef.current.workspace)
-    setCode(generated)
+    if (wsRef.current?.workspace) {
+      const generated = generateCode(wsRef.current.workspace)
+      setCode(generated)
+    } else if (xmlRef.current) {
+      const tempWs = Blockly.inject(document.createElement("div"), {
+        toolbox: tobiToolbox,
+        theme: tobiTheme,
+        renderer: "zelos",
+      })
+      Blockly.Xml.domToWorkspace(Blockly.Xml.textToDom(xmlRef.current), tempWs)
+      setCode(generateCode(tempWs))
+      tempWs.dispose()
+    }
   }, [])
 
   const handleBlocksChange = useCallback((xml) => {
@@ -347,7 +357,14 @@ export default function App() {
           </Button>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon-sm">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => {
+                  setRunning(false)
+                  setCommands([])
+                }}
+              >
                 <RotateCcw className="size-3.5" />
               </Button>
             </TooltipTrigger>
@@ -425,6 +442,7 @@ export default function App() {
           <div className="flex h-full flex-col">
             <Tabs
               value={view}
+              unmountOnExit={false}
               onValueChange={(details) => {
                 if (details.value === "code") handleGenerateCode()
                 setView(details.value)

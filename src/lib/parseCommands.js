@@ -24,7 +24,7 @@ function parseBlock(block, commands) {
   switch (block.type) {
     case "tobi_when_start": {
       parseBlock(block.getNextBlock(), commands)
-      break
+      return
     }
     case "tobi_walk": {
       const steps = block.getFieldValue("STEPS")
