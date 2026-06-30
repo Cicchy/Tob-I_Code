@@ -1,62 +1,44 @@
-"use client";;
-import {
-  Splitter as ArkSplitter,
-  useSplitterContext,
-} from "@ark-ui/react/splitter";
 import { GripVertical } from "lucide-react";
+import * as ResizablePrimitive from "react-resizable-panels";
+
 import { cn } from "@/lib/utils";
 
-export const useResizable = useSplitterContext;
+function ResizablePanelGroup({ className, ...props }) {
+	return (
+		<ResizablePrimitive.PanelGroup
+			data-slot="resizable-panel-group"
+			className={cn(
+				"flex h-full w-full font-base data-[panel-group-direction=vertical]:flex-col",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
 
-export const Resizable = (
-  props
-) => {
-  const { className, ...rest } = props;
+function ResizablePanel({ className, ...props }) {
+	return (
+		<ResizablePrimitive.Panel data-slot="resizable-panel" className={cn(className)} {...props} />
+	);
+}
 
-  return (
-    <ArkSplitter.Root
-      className={cn("flex size-full", className)}
-      data-slot="resizable"
-      {...rest} />
-  );
-};
+function ResizableHandle({ withHandle, className, ...props }) {
+	return (
+		<ResizablePrimitive.PanelResizeHandle
+			data-slot="resizable-handle"
+			className={cn(
+				"relative flex w-0.5 items-center justify-center bg-border after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-black focus-visible:ring-offset-1 data-[panel-group-direction=vertical]:h-0.5 data-[panel-group-direction=vertical]:w-full data-[panel-group-direction=vertical]:after:left-0 data-[panel-group-direction=vertical]:after:h-1 data-[panel-group-direction=vertical]:after:w-full data-[panel-group-direction=vertical]:after:-translate-y-1/2 data-[panel-group-direction=vertical]:after:translate-x-0 [&[data-panel-group-direction=vertical]>div]:rotate-90",
+				className,
+			)}
+			{...props}
+		>
+			{withHandle && (
+				<div className="z-10 flex h-4 w-3 items-center justify-center rounded-base border bg-border">
+					<GripVertical className="size-2.5" />
+				</div>
+			)}
+		</ResizablePrimitive.PanelResizeHandle>
+	);
+}
 
-export const ResizablePanel = (
-  props
-) => <ArkSplitter.Panel data-slot="resizable-panel" {...props} />;
-
-export const ResizableResizeTrigger = (props) => {
-  const { withHandle = false, className, ...rest } = props;
-
-  return (
-    <ArkSplitter.ResizeTrigger
-      aria-label="Resize"
-      className={cn(
-        "relative bg-border",
-        "flex w-px items-center justify-center",
-        "after:-translate-x-1/2 data-[orientation=vertical]:after:-translate-y-1/2",
-        "after:absolute after:inset-s-1/2 after:inset-y-0 after:w-1",
-        "focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1",
-        "data-[orientation=vertical]:h-px data-[orientation=vertical]:w-full",
-        "data-[orientation=vertical]:after:inset-s-0 data-[orientation=vertical]:after:h-1 data-[orientation=vertical]:after:w-full",
-        "data-[orientation=vertical]:after:translate-x-0",
-        "[&[data-orientation=vertical]>div]:rotate-90",
-        className
-      )}
-      data-slot="resizable-resize-trigger"
-      {...rest}>
-      {withHandle && (
-        <div
-          className={cn(
-            "z-10",
-            "h-4 w-3",
-            "flex items-center justify-center",
-            "bg-border",
-            "rounded-xs border"
-          )}>
-          <GripVertical className="size-2.5" />
-        </div>
-      )}
-    </ArkSplitter.ResizeTrigger>
-  );
-};
+export { ResizableHandle, ResizablePanel, ResizablePanelGroup };
