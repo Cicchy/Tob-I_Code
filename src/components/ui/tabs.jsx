@@ -1,118 +1,48 @@
-"use client";;
-import { Tabs as ArkTabs, useTabsContext } from "@ark-ui/react/tabs";
-import { tv } from "tailwind-variants";
+import * as TabsPrimitive from "@radix-ui/react-tabs";
+
 import { cn } from "@/lib/utils";
 
-export const useTabs = useTabsContext;
+function Tabs({ className, ...props }) {
+	return <TabsPrimitive.Root data-slot="tabs" className={cn("w-full", className)} {...props} />;
+}
 
-export const Tabs = (props) => {
-  const { lazyMount = true, unmountOnExit = true, className, ...rest } = props;
+function TabsList({ className, ...props }) {
+	return (
+		<TabsPrimitive.List
+			data-slot="tabs-list"
+			className={cn(
+				"inline-flex h-12 items-center justify-center rounded-base border-2 border-border bg-background p-1 text-foreground",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
 
-  return (
-    <ArkTabs.Root
-      className={cn("flex flex-col gap-2", "data-[orientation=vertical]:flex-row", className)}
-      data-slot="tabs"
-      lazyMount={lazyMount}
-      unmountOnExit={unmountOnExit}
-      {...rest} />
-  );
-};
+function TabsTrigger({ className, ...props }) {
+	return (
+		<TabsPrimitive.Trigger
+			data-slot="tabs-trigger"
+			className={cn(
+				"inline-flex items-center justify-center whitespace-nowrap rounded-base border-2 border-transparent px-2 py-1 gap-1.5 text-sm font-heading ring-offset-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-main data-[state=active]:text-main-foreground data-[state=active]:border-border",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
 
-const tabsListVariants = tv({
-  slots: {
-    base: [
-      "relative z-0",
-      "w-fit",
-      "text-muted-foreground",
-      "flex items-center justify-center gap-x-0.5",
-      "data-[orientation=vertical]:flex-col",
-    ],
-    indicator: [
-      "absolute inset-s-0 bottom-0",
-      "h-(--height) w-(--width)",
-      "transition-[width,translate] duration-200 ease-in-out",
-      "motion-reduce:transition-none!",
-    ],
-  },
-  variants: {
-    variant: {
-      default: {
-        base: ["rounded-lg"],
-        indicator: ["-z-1 rounded-lg bg-accent"],
-      },
-      underline: {
-        base: [
-          "data-[orientation=vertical]:px-1",
-          "data-[orientation=horizontal]:py-1",
-          "*:data-[slot=tabs-tab]:hover:bg-accent",
-        ],
-        indicator: [
-          "z-10",
-          "absolute bottom-0",
-          "bg-primary",
-          "data-[orientation=horizontal]:h-0.5",
-          "data-[orientation=vertical]:w-0.5",
-        ],
-      },
-    },
-  },
-  defaultVariants: {
-    variant: "default",
-  },
-});
+function TabsContent({ className, ...props }) {
+	return (
+		<TabsPrimitive.Content
+			data-slot="tabs-content"
+			className={cn(
+				"mt-2 ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
 
-export const TabsList = (props) => {
-  const { variant = "default", className, children, ...rest } = props;
-
-  const { base, indicator } = tabsListVariants({ variant });
-
-  return (
-    <ArkTabs.List className={cn(base(), className)} data-slot="tabs-list" {...rest}>
-      {children}
-      <ArkTabs.Indicator className={cn(indicator())} data-slot="tab-indicator" />
-    </ArkTabs.List>
-  );
-};
-
-export const TabsTrigger = (
-  props
-) => {
-  const { className, ...rest } = props;
-
-  return (
-    <ArkTabs.Trigger
-      className={cn(
-        "relative",
-        "h-9 sm:h-8",
-        "flex shrink-0 grow items-center justify-center gap-1.5",
-        "px-[calc(--spacing(2.5)-1px)]",
-        "whitespace-nowrap font-medium text-sm",
-        "rounded-lg border border-transparent",
-        "cursor-pointer",
-        "transition-[color,background-color,box-shadow]",
-        "data-[orientation=vertical]:w-full data-[orientation=vertical]:justify-start",
-        "hover:text-foreground/72",
-        "aria-selected:text-foreground",
-        "outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-ring/32",
-        "data-disabled:pointer-events-none data-disabled:opacity-64",
-        "[&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:-mx-0.5 [&_svg]:shrink-0",
-        "motion-reduce:transition-none!",
-        className
-      )}
-      data-slot="tabs-trigger"
-      {...rest} />
-  );
-};
-
-export const TabsContent = (
-  props
-) => {
-  const { className, ...rest } = props;
-
-  return (
-    <ArkTabs.Content
-      className={cn("flex-1 outline-none", className)}
-      data-slot="tabs-content"
-      {...rest} />
-  );
-};
+export { Tabs, TabsContent, TabsList, TabsTrigger };

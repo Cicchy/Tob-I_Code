@@ -1,233 +1,150 @@
-"use client";;
-import { Portal } from "@ark-ui/react";
-import { ark } from "@ark-ui/react/factory";
-import { Select as ArkSelect, useSelectContext } from "@ark-ui/react/select";
-import { CheckIcon, ChevronsUpDownIcon, XIcon } from "lucide-react";
+import * as SelectPrimitive from "@radix-ui/react-select";
+import { Check, ChevronDown, ChevronUp } from "lucide-react";
+
 import { cn } from "@/lib/utils";
-import { inputVariants } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 
-export const useSelect = useSelectContext;
+function Select({ ...props }) {
+	return <SelectPrimitive.Root data-slot="select" {...props} />;
+}
 
-export const SelectContext = ArkSelect.Context;
+function SelectGroup({ ...props }) {
+	return <SelectPrimitive.Group data-slot="select-group" {...props} />;
+}
 
-export const Select = (props) => {
-  const { lazyMount = true, unmountOnExit = true, children, ...rest } = props;
+function SelectValue({ ...props }) {
+	return <SelectPrimitive.Value data-slot="select-value" {...props} />;
+}
 
-  return (
-    <ArkSelect.Root
-      data-slot="select"
-      lazyMount={lazyMount}
-      unmountOnExit={unmountOnExit}
-      {...rest}>
-      {children}
-      <ArkSelect.HiddenSelect />
-    </ArkSelect.Root>
-  );
-};
+function SelectTrigger({ className, children, ...props }) {
+	return (
+		<SelectPrimitive.Trigger
+			data-slot="select-trigger"
+			className={cn(
+				"flex h-10 w-full items-center justify-between rounded-base border-2 border-border bg-main gap-2 px-3 py-2 text-sm font-base text-main-foreground ring-offset-white placeholder:text-foreground/50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 focus:outline-hidden focus:ring-2 focus:ring-black focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+				className,
+			)}
+			{...props}
+		>
+			{children}
+			<SelectPrimitive.Icon asChild>
+				<ChevronDown className="size-4" />
+			</SelectPrimitive.Icon>
+		</SelectPrimitive.Trigger>
+	);
+}
 
-export const SelectTrigger = (props) => {
-  const {
-    showClear = false,
-    size = "md",
-    className,
-    children,
-    ...rest
-  } = props;
+function SelectScrollUpButton({ className, ...props }) {
+	return (
+		<SelectPrimitive.ScrollUpButton
+			data-slot="select-scroll-up"
+			className={cn(
+				"flex cursor-default text-main-foreground font-base items-center justify-center py-1",
+				className,
+			)}
+			{...props}
+		>
+			<ChevronUp className="size-4" />
+		</SelectPrimitive.ScrollUpButton>
+	);
+}
 
-  return (
-    <ArkSelect.Control data-slot="select-control">
-      <ArkSelect.Trigger
-        className={cn(
-          inputVariants({ size }),
-          "w-fit",
-          "flex items-center gap-2",
-          "text-sm",
-          "data-placeholder-shown:text-muted-foreground/64",
-          "data-[state=open]:border-primary data-[state=open]:ring-[3px] data-[state=open]:ring-ring/32",
-          "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground",
-          className
-        )}
-        data-slot="select-trigger"
-        {...rest}>
-        {children}
+function SelectScrollDownButton({ className, ...props }) {
+	return (
+		<SelectPrimitive.ScrollDownButton
+			data-slot="select-scroll-down"
+			className={cn(
+				"flex cursor-default text-main-foreground font-base items-center justify-center py-1",
+				className,
+			)}
+			{...props}
+		>
+			<ChevronDown className="size-4" />
+		</SelectPrimitive.ScrollDownButton>
+	);
+}
 
-        <div className="ms-auto flex items-center gap-1 rtl:me-auto">
-          {showClear && (
-            <SelectClearTrigger>
-              <XIcon />
-            </SelectClearTrigger>
-          )}
-          <ArkSelect.Indicator data-slot="select-indicator">
-            <ChevronsUpDownIcon />
-          </ArkSelect.Indicator>
-        </div>
-      </ArkSelect.Trigger>
-    </ArkSelect.Control>
-  );
-};
+function SelectContent({ className, children, position = "popper", ...props }) {
+	return (
+		<SelectPrimitive.Portal>
+			<SelectPrimitive.Content
+				data-slot="select-content"
+				className={cn(
+					"relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-base border-2 border-border bg-main text-main-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--radix-select-content-transform-origin)",
+					position === "popper" &&
+						"data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+					className,
+				)}
+				position={position}
+				{...props}
+			>
+				<SelectScrollUpButton />
+				<SelectPrimitive.Viewport
+					className={cn(
+						"p-1",
+						position === "popper" &&
+							"h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]",
+					)}
+				>
+					{children}
+				</SelectPrimitive.Viewport>
+				<SelectScrollDownButton />
+			</SelectPrimitive.Content>
+		</SelectPrimitive.Portal>
+	);
+}
 
-export const SelectSeparator = (
-  props
-) => {
-  const { className, ...rest } = props;
+function SelectLabel({ className, ...props }) {
+	return (
+		<SelectPrimitive.Label
+			data-slot="select-label"
+			className={cn(
+				"border-2 border-transparent py-1.5 pr-8 pl-2 text-sm font-base text-main-foreground/80",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
 
-  return (
-    <Separator
-      className={cn("pointer-events-none -mx-1 my-1 h-px bg-border", className)}
-      data-slot="select-separator"
-      {...rest} />
-  );
-};
+function SelectItem({ className, children, ...props }) {
+	return (
+		<SelectPrimitive.Item
+			data-slot="select-item"
+			className={cn(
+				"relative flex w-full cursor-default select-none items-center gap-2 rounded-base py-1.5 pr-8 pl-2 text-sm border-2 border-transparent font-base outline-none focus:border-border data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+				className,
+			)}
+			{...props}
+		>
+			<span className="absolute right-2 flex size-3.5 items-center justify-center">
+				<SelectPrimitive.ItemIndicator>
+					<Check className="size-4" />
+				</SelectPrimitive.ItemIndicator>
+			</span>
+			<SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+		</SelectPrimitive.Item>
+	);
+}
 
-export const SelectValue = (
-  props
-) => {
-  const { className, ...rest } = props;
+function SelectSeparator({ className, ...props }) {
+	return (
+		<SelectPrimitive.Separator
+			data-slot="select-separator"
+			className={cn("-mx-1 my-1 h-px bg-border", className)}
+			{...props}
+		/>
+	);
+}
 
-  return (
-    <ArkSelect.ValueText
-      className={cn("min-w-0", "flex items-center gap-2", "truncate text-nowrap", className)}
-      {...rest} />
-  );
-};
-
-export const SelectContent = (
-  props
-) => {
-  const { className, ...rest } = props;
-
-  return (
-    <Portal>
-      <ArkSelect.Positioner data-slot="select-positioner">
-        <ArkSelect.Content
-          className={cn(
-            "z-50",
-            "relative",
-            "max-h-96 min-w-(--reference-width)",
-            "p-1",
-            "bg-popover",
-            "text-popover-foreground",
-            "rounded-xl border shadow-lg/5",
-            "origin-(--transform-origin)",
-            "outline-none",
-            "overflow-y-auto",
-            "duration-100",
-            "data-[state=open]:animate-in",
-            "data-[state=open]:fade-in-0",
-            "data-[state=open]:zoom-in-[98%]",
-            "data-[placement=bottom]:slide-in-from-top-2",
-            "data-[placement=left]:slide-in-from-end-2",
-            "data-[placement=right]:slide-in-from-start-2",
-            "data-[placement=top]:slide-in-from-bottom-2",
-            "motion-reduce:animate-none!",
-            className
-          )}
-          data-slot="select-content"
-          {...rest} />
-      </ArkSelect.Positioner>
-    </Portal>
-  );
-};
-
-export const SelectGroup = (props) => {
-  const { heading, children, ...rest } = props;
-
-  return (
-    <ArkSelect.ItemGroup data-slot="select-group" {...rest}>
-      {!heading && <SelectGroupLabel>{heading}</SelectGroupLabel>}
-      {children}
-    </ArkSelect.ItemGroup>
-  );
-};
-
-export const SelectGroupLabel = (
-  props
-) => {
-  const { className, ...rest } = props;
-
-  return (
-    <ArkSelect.ItemGroupLabel
-      className={cn("px-2 py-1.5", "font-semibold text-muted-foreground text-xs", className)}
-      data-slot="select-group-label"
-      {...rest} />
-  );
-};
-
-export const SelectItem = (
-  props
-) => {
-  const { className, children, ...rest } = props;
-
-  return (
-    <ArkSelect.Item
-      className={cn(
-        "relative",
-        "w-full",
-        "py-1.5 ps-2 pe-8",
-        "flex items-center gap-2",
-        "select-none text-base md:text-sm",
-        "rounded-md",
-        "cursor-default",
-        "outline-hidden",
-        "in-[[data-slot=select-content]:has([data-slot=select-group-label])]:ps-4",
-        "data-highlighted:bg-accent data-highlighted:text-accent-foreground",
-        "data-disabled:pointer-events-none data-disabled:opacity-64",
-        "[&_svg]:pointer-events-none [&_svg]:shrink-0",
-        "[&_svg:not([class*='size-'])]:size-4 [&_svg]:text-muted-foreground",
-        className
-      )}
-      data-slot="select-item"
-      {...rest}>
-      <ArkSelect.ItemText
-        className="flex w-full flex-1 items-center gap-2"
-        data-slot="select-item-text">
-        {children}
-      </ArkSelect.ItemText>
-      <span className="absolute inset-e-2 flex size-4 items-center justify-center">
-        <ArkSelect.ItemIndicator data-slot="select-item-indicator">
-          <CheckIcon />
-        </ArkSelect.ItemIndicator>
-      </span>
-    </ArkSelect.Item>
-  );
-};
-
-export const SelectClearTrigger = (
-  props
-) => {
-  const { className, ...rest } = props;
-
-  return (
-    <ArkSelect.ClearTrigger
-      aria-label="Clear selected value(s)"
-      className={cn(
-        "[&_svg]:pointer-events-none [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:text-muted-foreground",
-        "transition-opacity",
-        "opacity-64",
-        "outline-none focus-visible:opacity-100",
-        "hover:opacity-100",
-        "motion-reduce:transition-none!",
-        className
-      )}
-      data-slot="select-clear-trigger"
-      {...rest} />
-  );
-};
-
-export const SelectEmpty = (props) => {
-  const { className, ...rest } = props;
-
-  const { empty } = useSelectContext();
-
-  if (empty) {
-    return (
-      <ark.div
-        className={cn("px-2 py-1.5", "text-center text-muted-foreground text-sm", className)}
-        role="presentation"
-        {...rest} />
-    );
-  }
-
-  return null;
+export {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectLabel,
+	SelectScrollDownButton,
+	SelectScrollUpButton,
+	SelectSeparator,
+	SelectTrigger,
+	SelectValue,
 };

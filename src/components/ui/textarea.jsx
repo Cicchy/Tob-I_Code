@@ -1,33 +1,16 @@
-"use client";;
-import { Field as ArkField } from "@ark-ui/react/field";
 import { cn } from "@/lib/utils";
 
-export const Textarea = (
-  props
-) => {
-  const { className, ...rest } = props;
+function Textarea({ className, ...props }) {
+	return (
+		<textarea
+			data-slot="textarea"
+			className={cn(
+				"flex min-h-[80px] w-full rounded-base border-2 border-border bg-secondary-background selection:bg-main selection:text-main-foreground px-3 py-2 text-sm font-base text-foreground placeholder:text-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
 
-  return (
-    <ArkField.Textarea
-      className={cn(
-        "field-sizing-content min-h-16 w-full",
-        "flex",
-        "px-3 py-2",
-        "bg-transparent dark:bg-input/30",
-        "text-base md:text-sm",
-        "rounded-lg border border-input shadow-xs/5",
-        "placeholder:text-muted-foreground/64",
-        "transition-[color,box-shadow]",
-        "outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-ring/32",
-        "aria-invalid:border-destructive aria-invalid:text-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/24",
-        "data-invalid:border-destructive data-invalid:text-destructive data-invalid:ring-[3px] data-invalid:ring-destructive/24",
-        "dark:aria-invalid:border-destructive-foreground dark:aria-invalid:text-destructive-foreground dark:aria-invalid:ring-destructive-foreground/40",
-        "dark:data-invalid:border-destructive-foreground dark:data-invalid:text-destructive-foreground dark:data-invalid:ring-destructive-foreground/40",
-        "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-64",
-        "motion-reduce:transition-none!",
-        className
-      )}
-      data-slot="textarea"
-      {...rest} />
-  );
-};
+export { Textarea };

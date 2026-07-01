@@ -1,7 +1,6 @@
 # Tob-I Robot IDE
 
-Use Shark UI documentation from https://shark.vini.one/llms-full.txt
-Use Shark UI component documentation https://shark.vini.one/llms-components.txt
+Use neobrutalism component docs from https://neobrutalism.dev/docs
 Use SKILL.md in /frontend_skill
 
 Single-window web IDE for programming the Tob-I quadruped robot. Users build programs visually with Blockly blocks, preview execution on a 3D robot model, and upload code to a physical Tob-I robot.
@@ -33,7 +32,7 @@ Single-window web IDE for programming the Tob-I quadruped robot. Users build pro
 | Bundler | Vite |
 | UI | React |
 | Styling | Tailwind CSS v4 |
-| UI library | Shark UI (park-ui) — all interactive components |
+| UI library | neobrutalism (based on shadcn/ui + Radix) |
 | Visual blocks | Blockly v12 |
 | 3D preview | Three.js |
 | File I/O | File System Access API |
@@ -51,9 +50,10 @@ Single-window web IDE for programming the Tob-I quadruped robot. Users build pro
 ## Visual Style
 
 - **Dark theme**: `class="dark"` on `<html>`, dark backgrounds throughout
-- **Monochrome UI shell**: all buttons, panels, headers, dialogs, tabs — grayscale only (black, white, grays)
-- **Blockly blocks are the exception**: blocks use **functional colors** (different hues per category) so users can distinguish motion / control / logic / actions at a glance. The Blockly workspace background, toolbox, and flyout follow the dark monochrome theme.
-- **Shark UI only**: never use raw `<textarea>`, `<input>`, `<select>`, or other native form controls — always import the Shark UI component
+- **Neobrutalism**: bold 2px borders, offset box shadows, high contrast, blocky aesthetic
+- **Monochrome UI shell**: all buttons, panels, headers, dialogs, tabs — grayscale with a blue accent (`--main`)
+- **Blockly blocks are the exception**: blocks use **functional colors** (different hues per category) so users can distinguish motion / control / logic / actions at a glance. The Blockly workspace background, toolbox, and flyout follow the dark theme.
+- **neobrutalism components only**: never use raw `<textarea>`, `<input>`, `<select>`, or other native form controls — always import the neobrutalism component
 - **System fonts**: no custom font packages
 
 ---
@@ -86,9 +86,11 @@ Single-window web IDE for programming the Tob-I quadruped robot. Users build pro
 
 ## UI Gotchas
 
-- **Dialog `onOpenChange`**: must use `(details) => setOpen(details.open)` — Ark UI passes `{ open: boolean }`, not a raw boolean
-- **AlertDialog**: control via `open` prop + state variable at component root, not `AlertDialogTrigger` — avoids event propagation bugs with Ark UI `asChild`
-- **All interactive elements** must be Shark UI components (Button, Textarea, SegmentGroup, Dialog, Popover, etc.)
+- **Dialog `onOpenChange`**: Radix passes a raw boolean `(open) => setOpen(open)`, not an object
+- **Tabs `onValueChange`**: Radix passes a raw string `(value) => setView(value)`, not an object
+- **DropdownMenuTrigger**: use as a styled trigger — styling is applied directly via className, not via props
+- **All interactive elements** must be neobrutalism components (Button, Textarea, Input, Dialog, Tabs, etc.)
+- **Sonner toast API**: `toast.success(title, { description })`, `toast.error(title, { description })`, `toast.loading(title, { description })` — not `toast({ title, type })`
 
 ---
 
